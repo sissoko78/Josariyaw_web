@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "741385998298",
+    "project_id": "josariyaw",
+    "storage_bucket": "josariyaw.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:741385998298:android:b504c673cd7df87825bae3",
+        "android_client_info": {
+          "package_name": "com.example.josariyaw"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBUvHfEQXvrVvF7U0W6DZKl46SSBzIIbFk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
