@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_icon_class/font_awesome_icon_class.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:josariyaw/Composant/FormulaireAjoutetextdeloi.dart';
 import 'package:josariyaw/Composant/LoiCard.dart';
+import 'package:josariyaw/Service/TextdeloiService.dart';
 
 class Testloi extends StatefulWidget {
   const Testloi({super.key});
@@ -16,6 +18,11 @@ class _TestloiState extends State<Testloi> with SingleTickerProviderStateMixin {
   List<String> typesDeLoi = [];
   bool isLoading = true;
 
+  final TextdeloiService _textdeloiService = TextdeloiService();
+  FlutterSoundPlayer? _player;
+  bool _isPlaying = false;
+  String? _currentPlayingUrl;
+
   @override
   void initState() {
     super.initState();
@@ -26,11 +33,57 @@ class _TestloiState extends State<Testloi> with SingleTickerProviderStateMixin {
         isLoading = false;
       });
     });
+
+    _player = FlutterSoundPlayer();
+    _initializePlayer();
+  }
+
+  Future<void> _initializePlayer() async {
+    try {
+      await _player?.openPlayer();
+    } catch (e) {
+      print("Erreur lors de l'initialisation du lecteur audio : $e");
+    }
+  }
+
+  Future<void> _playAudio(String audioUrl) async {
+    if (_isPlaying && _currentPlayingUrl == audioUrl) {
+      await _player?.stopPlayer();
+      setState(() {
+        _isPlaying = false;
+        _currentPlayingUrl = null;
+      });
+    } else {
+      try {
+        await _player?.startPlayer(
+          fromURI: audioUrl,
+          codec: Codec.mp3,
+          whenFinished: () {
+            setState(() {
+              _isPlaying = false;
+              _currentPlayingUrl = null;
+            });
+          },
+        );
+        setState(() {
+          _isPlaying = true;
+          _currentPlayingUrl = audioUrl;
+        });
+      } catch (e) {
+        print("Erreur lors de la lecture de l'audio : $e");
+      }
+    }
+  }
+
+  Future<void> _deleteTextLoi(String id) async {
+    await _textdeloiService.SupprimerTextdeloi(id);
+    setState(() {}); // Rafraîchir la vue
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _player?.closePlayer();
     super.dispose();
   }
 
@@ -58,7 +111,6 @@ class _TestloiState extends State<Testloi> with SingleTickerProviderStateMixin {
     switch (type) {
       case 'Droit de l\'homme':
         return Icons.man;
-
       case 'Droit des femmes':
         return FontAwesomeIcons.personDress;
       case 'Constitution':
@@ -114,9 +166,17 @@ class _TestloiState extends State<Testloi> with SingleTickerProviderStateMixin {
                       separatorBuilder: (context, index) => Divider(height: 1),
                       itemBuilder: (context, index) {
                         var texteLoi = textesLoi[index].data() as Map;
+                        String audioUrl = texteLoi['descriptionvocal'] ?? '';
+                        String id = textesLoi[index].id;
                         return LoiCard(
                           texteLoi: texteLoi,
                           icon: getIcon(texteLoi['typeloi']),
+                          onPlayAudio: audioUrl.isNotEmpty
+                              ? () => _playAudio(audioUrl)
+                              : null,
+                          onDelete: () => _deleteTextLoi(id),
+                          isPlaying:
+                              _isPlaying && _currentPlayingUrl == audioUrl,
                         );
                       },
                     );
@@ -127,7 +187,7 @@ class _TestloiState extends State<Testloi> with SingleTickerProviderStateMixin {
       floatingActionButton: FloatingActionButton(
         onPressed: Ajouterloitext,
         child: Icon(Icons.add),
-        backgroundColor: Colors.amber,
+        backgroundColor: Colors.blueAccent,
         tooltip: 'Ajouter un texte',
       ),
       backgroundColor: const Color(0xFFE1F3F3),
