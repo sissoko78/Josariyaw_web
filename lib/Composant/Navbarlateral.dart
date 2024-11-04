@@ -28,7 +28,7 @@ class Menubar extends StatelessWidget {
           DrawerHeader(child: Image.asset('assets/logo_de_login.png')),
           ListTile(
             leading: Icon(Icons.dashboard, color: Colors.blueAccent),
-            title: Text('Dashabord'),
+            title: Text('Dashbord'),
             onTap: () {
               Navigator.push(context,
                   MaterialPageRoute(builder: (context) => Adminpage()));

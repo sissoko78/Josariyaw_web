@@ -6,31 +6,38 @@ class TextLoi {
   String description;
   String typeloi;
   String descriptionvocal;
+  Timestamp date;
 
-  TextLoi(
-      {required this.id,
-      required this.article,
-      required this.description,
-      required this.typeloi,
-      required this.descriptionvocal});
+  TextLoi({
+    required this.id,
+    required this.article,
+    required this.description,
+    required this.typeloi,
+    required this.descriptionvocal,
+    required this.date,
+  });
 
-// methode pour convertir un document firestore en instance de User
+  // Méthode pour convertir un document Firestore en instance de TextLoi
   factory TextLoi.fromFirestore(Map<String, dynamic> data, String id) {
     return TextLoi(
-        id: id,
-        article: data['article'],
-        description: data['description'],
-        typeloi: data['typeloi'],
-        descriptionvocal: data['descriptionvocal']);
+      id: id,
+      article: data['article'],
+      description: data['description'],
+      typeloi: data['typeloi'],
+      descriptionvocal: data['descriptionvocal'],
+      date: data['date'] ??
+          Timestamp.now(), // Utilise `Timestamp.now()` si le champ est absent
+    );
   }
 
-  //methode pour convertir un text de loi en doc firestore
-  Map<String, dynamic> ToFirestore() {
+  // Méthode pour convertir un texte de loi en document Firestore
+  Map<String, dynamic> toFirestore() {
     return {
       'article': article,
       'description': description,
       'typeloi': typeloi,
-      'descriptionvocal': descriptionvocal
+      'descriptionvocal': descriptionvocal,
+      'date': date,
     };
   }
 }

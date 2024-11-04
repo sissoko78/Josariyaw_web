@@ -231,6 +231,7 @@ class _FormulaireajoutconseillersState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -320,16 +321,28 @@ class _FormulaireajoutconseillersState
                         obscureText: true,
                         icon: Icons.lock_outline),
                     SizedBox(height: 30),
-                    ElevatedButton(
-                      onPressed: _isRecording ? null : _startRecording,
-                      child: Text("Démarrer l'enregistrement"),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _isRecording ? null : _startRecording,
+                            child: Text(
+                                "Enregistrer la description du conseiller"),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 20,
+                        ),
+                        Expanded(
+                            child: ElevatedButton(
+                          onPressed: _isRecording ? _stopRecording : null,
+                          child: Text("Arrêter l'enregistrement"),
+                        ))
+                      ],
                     ),
-                    SizedBox(height: 15),
-                    ElevatedButton(
-                      onPressed: _isRecording ? _stopRecording : null,
-                      child: Text("Arrêter l'enregistrement"),
+                    SizedBox(
+                      height: 20,
                     ),
-                    SizedBox(height: 30),
                     ElevatedButton(
                       onPressed: soumettreFormulaire,
                       style: ElevatedButton.styleFrom(

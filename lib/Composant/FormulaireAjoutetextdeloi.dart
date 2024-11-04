@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:io' as io;
 import 'dart:html' as html;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
@@ -132,6 +133,7 @@ class _FormulaireAjouteTexteDeLoiState
       description: descriptionController.text,
       descriptionvocal: audioUrl ?? '',
       typeloi: _typeLoi ?? 'Droit de l\'homme',
+      date: Timestamp.now(), // Ajout de la date ici
     );
 
     textdeloiService.AjouterLoi(newtextloi).then((_) {

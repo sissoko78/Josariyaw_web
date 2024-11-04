@@ -8,27 +8,40 @@ class TextdeloiService {
   //methode pour ajouter text de loi
   Future<void> AjouterLoi(TextLoi textloi) async {
     try {
-      await _loisCollection.add(textloi.ToFirestore());
-      print('Loi ajoutez avec succès yeaaahhh!!!!!!!');
+      final textLoiData = textloi.toFirestore();
+      textLoiData['date'] = Timestamp.now(); // Ajoute la date actuelle
+
+      await _loisCollection.add(textLoiData);
+      print('Loi ajoutée avec succès !');
     } catch (e) {
-      print(e);
+      print('Erreur lors de l\'ajout de la loi: $e');
     }
   }
 
   //methode pour afficher tous les texts de loi
-  Stream<List<TextLoi>> AffichertextLoi() {
+  Stream<List<TextLoi>> afficherTextLoi() {
     return _loisCollection.snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
+      // Transformer les documents en instances de TextLoi
+      List<TextLoi> lois = snapshot.docs.map((doc) {
         return TextLoi.fromFirestore(
             doc.data() as Map<String, dynamic>, doc.id);
       }).toList();
+
+      // Trier la liste localement par le numéro d'article
+      lois.sort((a, b) {
+        int numeroA = int.parse(a.article.replaceAll(RegExp(r'[^0-9]'), ''));
+        int numeroB = int.parse(b.article.replaceAll(RegExp(r'[^0-9]'), ''));
+        return numeroA.compareTo(numeroB);
+      });
+
+      return lois;
     });
   }
 
   //Modifier text de loi
   Future<void> Modifiertextdeloi(String id, TextLoi textloi) async {
     try {
-      await _loisCollection.doc(id).update(textloi.ToFirestore());
+      await _loisCollection.doc(id).update(textloi.toFirestore());
       print('yeahhhh modifier avec succès');
     } catch (e) {
       print(e);

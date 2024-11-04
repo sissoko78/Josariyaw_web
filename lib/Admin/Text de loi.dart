@@ -104,6 +104,7 @@ class _TestloiState extends State<Testloi> with SingleTickerProviderStateMixin {
     return FirebaseFirestore.instance
         .collection('textes_loi')
         .where('typeloi', isEqualTo: type)
+        .orderBy('date', descending: false) // Du plus ancien au plus récent
         .snapshots();
   }
 
@@ -147,6 +148,8 @@ class _TestloiState extends State<Testloi> with SingleTickerProviderStateMixin {
                 return StreamBuilder<QuerySnapshot>(
                   stream: obtenirTextesParType(type),
                   builder: (context, snapshot) {
+                    print(snapshot.error);
+                    print(snapshot.data);
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Center(child: CircularProgressIndicator());
                     }

@@ -2,9 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:josariyaw/Composant/Box_dashbord.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:josariyaw/Composant/Navbarlateral.dart';
-import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:josariyaw/Service/AuthentificationService.dart';
 
 class Adminpage extends StatefulWidget {
@@ -16,18 +15,27 @@ class Adminpage extends StatefulWidget {
 
 class _AdminpageState extends State<Adminpage> {
   AuthService authService = AuthService();
-  final List<Map<String, dynamic>> griditems = [
-    {'title': 'Populations', 'icon': FontAwesomeIcons.peopleArrows},
-    {'title': 'Conseillers', 'icon': FontAwesomeIcons.userNurse},
-    {'title': 'Cas Juridique', 'icon': Icons.folder_shared_outlined}
-  ];
-
   String? imageUrl;
   String? nom;
   String? prenom;
 
+  int countConseillers = 0;
+  int countPopulations = 0;
+  int countCasJuridique = 0;
+  Map<int, int> monthlyConnections = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+    _countUsersByRole('conseillers');
+    _countUsersByRole('civil');
+    _countCasJuridique();
+    _loadMonthlyConnections();
+  }
+
   Future<void> _loadUserProfile() async {
-    final auth.User? user = FirebaseAuth.instance.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
@@ -43,16 +51,124 @@ class _AdminpageState extends State<Adminpage> {
     }
   }
 
-  Future<void> _logout() async {
-    await FirebaseAuth.instance.signOut();
-    // Redirigez l'utilisateur vers la page de connexion ou une autre page appropriée
+  Future<void> _countUsersByRole(String role) async {
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('role', isEqualTo: role)
+        .get();
+    setState(() {
+      if (role == 'conseillers') {
+        countConseillers = snapshot.docs.length;
+      } else if (role == 'civil') {
+        countPopulations = snapshot.docs.length;
+      }
+    });
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _loadUserProfile();
+  Future<void> _countCasJuridique() async {
+    QuerySnapshot snapshot =
+        await FirebaseFirestore.instance.collection('cas_juridiques').get();
+    setState(() {
+      countCasJuridique = snapshot.docs.length;
+    });
   }
+
+  Future<void> _loadMonthlyConnections() async {
+    for (int month = 1; month <= 12; month++) {
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('user_connections')
+          .where('month', isEqualTo: month)
+          .get();
+      setState(() {
+        monthlyConnections[month] = snapshot.docs.length;
+      });
+    }
+  }
+
+  Widget _buildDashboardCard(String title, IconData icon, int count) {
+    return SizedBox(
+      width: 100,
+      height: 200,
+      child: Card(
+        elevation: 3,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 30, color: Colors.blueAccent),
+              const SizedBox(height: 6),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                '$count',
+                style: TextStyle(fontSize: 18, color: Colors.black87),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /* Widget _buildMonthlyConnectionsChart() {
+    return SizedBox(
+      height: 200, // Explicitly set the height for the LineChart
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(show: true),
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, _) {
+                  final monthNames = [
+                    'Jan',
+                    'Feb',
+                    'Mar',
+                    'Apr',
+                    'May',
+                    'Jun',
+                    'Jul',
+                    'Aug',
+                    'Sep',
+                    'Oct',
+                    'Nov',
+                    'Dec'
+                  ];
+                  return Text(monthNames[value.toInt() - 1]);
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(showTitles: true),
+            ),
+          ),
+          lineBarsData: [
+            LineChartBarData(
+              spots: monthlyConnections.entries
+                  .map((entry) =>
+                      FlSpot(entry.key.toDouble(), entry.value.toDouble()))
+                  .toList(),
+              isCurved: true,
+              barWidth: 3,
+              color: Colors.blueAccent,
+              belowBarData: BarAreaData(
+                show: true,
+                color: Colors.blueAccent.withOpacity(0.3),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -63,17 +179,12 @@ class _AdminpageState extends State<Adminpage> {
           Expanded(
             child: Column(
               children: [
-                // Affichage des informations de l'utilisateur
                 Container(
                   padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                  ),
+                  decoration: BoxDecoration(color: Colors.white),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment
-                        .spaceBetween, // Ajout pour l'espacement
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Affichage de l'image de profil
                       Row(
                         children: [
                           CircleAvatar(
@@ -81,10 +192,9 @@ class _AdminpageState extends State<Adminpage> {
                             backgroundImage: imageUrl != null
                                 ? NetworkImage(imageUrl!)
                                 : AssetImage('assets/default_profile.png')
-                                    as ImageProvider, // Image par défaut
+                                    as ImageProvider,
                           ),
                           SizedBox(width: 16),
-                          // Affichage du nom et prénom
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -104,42 +214,54 @@ class _AdminpageState extends State<Adminpage> {
                           ),
                         ],
                       ),
-                      // Bouton de déconnexion
                       ElevatedButton(
                         onPressed: () async {
-                          await authService.Deconnexion(
-                              context); // Pass context to Deconnexion
+                          await authService.Deconnexion(context);
                         },
                         style: ElevatedButton.styleFrom(
                           foregroundColor: Colors.white,
-                          backgroundColor: Colors.blue, // Couleur du texte
+                          backgroundColor: Colors.blue,
                         ),
                         child: Text('Déconnexion'),
                       ),
                     ],
                   ),
                 ),
-                SizedBox(
-                    height: 10), // Espace entre le profil et le tableau de bord
-                AspectRatio(
-                  aspectRatio: 3,
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: GridView.builder(
-                      itemCount: griditems.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        mainAxisSpacing: 20.0,
-                        crossAxisSpacing: 20.0,
+                SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: _buildDashboardCard('Populations',
+                            FontAwesomeIcons.peopleArrows, countPopulations),
                       ),
-                      itemBuilder: (context, index) {
-                        return BoxDashbord(
-                          title: griditems[index]['title'],
-                          icon: griditems[index]['icon'],
-                        );
-                      },
                     ),
-                  ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: _buildDashboardCard('Conseillers',
+                            FontAwesomeIcons.userNurse, countConseillers),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: _buildDashboardCard('Cas Juridique',
+                            Icons.folder_shared_outlined, countCasJuridique),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'Connexions mensuelles',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: null,
                 ),
               ],
             ),
